@@ -10,7 +10,7 @@ import java.util.UUID;
  * @version 1.0
  * @Date 2022/7/3 20:56
  */
-public class CommonLang {
+public class CommunityUtil {
     // 生成随机字符串
     public static String generateUUID() {
         return UUID.randomUUID().toString().replaceAll("-", "");
