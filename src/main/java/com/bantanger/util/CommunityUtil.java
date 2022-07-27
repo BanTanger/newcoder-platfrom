@@ -1,8 +1,13 @@
 package com.bantanger.util;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.util.DigestUtils;
 
+import javax.xml.crypto.dsig.DigestMethod;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,4 +26,31 @@ public class CommunityUtil {
         if(StringUtils.isBlank(key)) return null;
         return DigestUtils.md5DigestAsHex(key.getBytes());
     }
+
+    /**
+     * @param code 状态
+     * @param msg  提示信息
+     * @param map  业务数据
+     * @return json数据
+     */
+    public static String getJSONString(int code, String msg, Map<String, Object> map) {
+        JSONObject json = new JSONObject();
+        json.put("code", code);
+        json.put("msg", msg);
+        if (map != null) {
+            for (String key : map.keySet()) {
+                json.put(key, map.get(key));
+            }
+        }
+        return json.toJSONString();
+    }
+
+    public static String getJSONString(int code, String msg) {
+        return getJSONString(code, msg, null);
+    }
+
+    public static String getJSONString(int code) {
+        return getJSONString(code, null, null);
+    }
+
 }

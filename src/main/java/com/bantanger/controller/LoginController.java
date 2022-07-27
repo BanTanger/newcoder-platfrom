@@ -4,6 +4,7 @@ import com.bantanger.config.kaptchaConfig;
 import com.bantanger.entity.User;
 import com.bantanger.service.UserService;
 import com.bantanger.util.CommunityConstant;
+import com.bantanger.util.CommunityUtil;
 import com.google.code.kaptcha.Producer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -145,21 +147,22 @@ public class LoginController implements CommunityConstant {
     public String forgetGo() {
         return "/site/forget";
     }
+
     //忘记密码之后获取验证码
-    @RequestMapping(path = "/forget/code", method = RequestMethod.GET)
+    @GetMapping(path = "/verifycode/{email}")
     @ResponseBody
-    public String getCode(String email, Model model,HttpSession session) {
+    public String getCode(@PathVariable("email") String email, Model model,HttpSession session) {
         Map<String, Object> map = userService.getCode(email);
         if (map.containsKey("emailMsg")) {//有错误的情况下
             model.addAttribute("emailMsg", map.get("emailMsg"));
         } else {//正确的情况下，向邮箱发送了验证码
             model.addAttribute("msg", "验证码已经发送到您的邮箱，5分钟内有效！");
             //将验证码存放在 session 中，后序和用户输入的信息进行比较
-            session.setAttribute("code",map.get("code"));
+            session.setAttribute("vericode",map.get("vericode"));
             //后序判断用户输入验证码的时候验证码是否已经过期
             session.setAttribute("expirationTime",map.get("expirationTime"));
         }
-        return "site/forget";
+        return CommunityUtil.getJSONString(200, "邮件发送成功!");
     }
 
     @RequestMapping(path = "/forget/password", method = RequestMethod.POST)
@@ -169,12 +172,12 @@ public class LoginController implements CommunityConstant {
         // 特判
         if(StringUtils.isBlank(code) || StringUtils.isBlank(vericode)
                 || !vericode.equals(code)) {
-            model.addAttribute("codeMsg", "验证码不正确");
+            model.addAttribute("vericodeMsg", "验证码不正确");
             return "/site/forget";
         }
         //验证码是否过期
         if (LocalDateTime.now().isAfter((LocalDateTime) session.getAttribute("expirationTime"))) {
-            model.addAttribute("codeMsg", "输入的验证码已过期，请重新获取验证码！");
+            model.addAttribute("vericodeMsg", "输入的验证码已过期，请重新获取验证码！");
             return "site/forget";
         }
         Map<String, Object> map = userService.forget(email, vericode, newpasswd, session);
@@ -184,7 +187,7 @@ public class LoginController implements CommunityConstant {
             return "site/operate-result";
         } else {
             model.addAttribute("emailMsg", map.get("emailMsg"));
-            model.addAttribute("codeMsg", map.get("codeMsg"));
+            model.addAttribute("vericodeMsg", map.get("vericodeMsg"));
             model.addAttribute("passwordMsg", map.get("passwordMsg"));
             return "/site/forget";
         }

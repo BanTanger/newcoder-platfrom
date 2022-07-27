@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import sun.security.krb5.internal.Ticket;
 
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
@@ -35,9 +36,11 @@ public class UserService implements CommunityConstant {
     @Autowired
     private LoginTicketMapper loginTicketMapper;
 
+    /*发送邮箱的模板生成引擎*/
     @Autowired
     private TemplateEngine templateEngine;
 
+    /*用户注册邮箱的域名*/
     @Value("${community.path.domain}")
     private String domain;
 
@@ -48,6 +51,11 @@ public class UserService implements CommunityConstant {
         return userMapper.selectById(id);
     }
 
+    /**
+     * 注册用户，发送用户激活码邮件
+     * @param user
+     * @return
+     */
     public Map<String, Object> register(User user) {
         Map<String, Object> map = new HashMap<>();
         if (user == null) throw new IllegalArgumentException("参数不能为空");
@@ -77,8 +85,8 @@ public class UserService implements CommunityConstant {
         // 注册用户：加盐和一些后端默认操作
         user.setSalt(CommunityUtil.generateUUID().substring(0, 5));
         user.setPassword(CommunityUtil.md5(user.getPassword() + user.getSalt()));
-        user.setType(0);
-        user.setStatus(0);
+        user.setType(0);  // 用户身份类型
+        user.setStatus(0); // 创建用户的激活情况，当前是未激活
         user.setActivationCode(CommunityUtil.generateUUID());
         user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png", new Random().nextInt(1000)));
         user.setCreateTime(new Date());
@@ -96,6 +104,12 @@ public class UserService implements CommunityConstant {
         return map;
     }
 
+    /**
+     * 用户通过邮箱注册的激活码状态判断
+     * @param userId 用户id
+     * @param code 激活码
+     * @return 激活码情况
+     */
     public int activation(int userId, String code) {
         User user = userMapper.selectById(userId);
         if (user.getStatus() == 1) {
@@ -107,7 +121,13 @@ public class UserService implements CommunityConstant {
         }
     }
 
-    // 用户登陆特判
+    /**
+     * 用户登陆过程生成凭证依据
+     * @param username 用户名称
+     * @param password 用户密码（md5不可逆加密）
+     * @param expiredSeconds 超时时间（24小时）
+     * @return 成败信息
+     */
     public Map<String, Object> login(String username, String password, int expiredSeconds) {
         Map<String, Object> map = new HashMap<>(); // 返回到消息信息
         // 空值特判
@@ -148,10 +168,19 @@ public class UserService implements CommunityConstant {
         return map;
     }
 
+    /**
+     * 用户通过将设置ticket，退出登陆
+     * @param ticket
+     */
     public void logout(String ticket) {
-        loginTicketMapper.updateTicket("ticket", 1);
+        loginTicketMapper.updateTicket(ticket, 1);
     }
 
+    /**
+     * 用户忘记密码，通过发送邮件获取验证码
+     * @param email 用户邮箱
+     * @return 成败信息
+     */
     public Map<String, Object> getCode(String email) {
         Map<String, Object> map = new HashMap<>(); // 返回到消息信息
         // 非空判断
@@ -173,16 +202,24 @@ public class UserService implements CommunityConstant {
         // 调用邮箱系统给这个用户发送验证码
         Context context = new Context();
         context.setVariable("email", user.getEmail()); // 得到这个用户的邮箱并且发送验证码
-        String vericode = CommunityUtil.generateUUID().substring(0, 5); // 生成六位数验证码
+        String vericode = CommunityUtil.generateUUID().substring(0, 6); // 生成六位数验证码
         context.setVariable("vericode", vericode); // 将其封装到context内容中，前端通过模板引擎生成页面
         // 模板引擎通过process找到生成邮件的模板，我们的忘记密码邮箱模板地址就是/main/forget
-        String content = templateEngine.process("/main/forget", context);
+        String content = templateEngine.process("/mail/forget", context);
         mailClient.sendMail(user.getEmail(), "牛客验证码", content); // 将封装好的内容通过邮箱系统发送出去
         map.put("vericode", vericode);
         map.put("expirationTime", LocalDateTime.now().plusMinutes(5L)); // 过期时间
         return map;
     }
 
+    /**
+     * 用户忘记密码，通过验证码来更改旧密码
+     * @param email 用户邮箱
+     * @param vericode 验证码
+     * @param newpasswd 新密码
+     * @param session 用于保存验证码到controller层验证正确性
+     * @return 成败信息
+     */
     public Map<String, Object> forget(String email, String vericode, String newpasswd, HttpSession session) {
         Map<String, Object> map = new HashMap<>(); // 返回到消息信息
         // 非空判断
@@ -211,5 +248,13 @@ public class UserService implements CommunityConstant {
         newpasswd = CommunityUtil.md5(newpasswd + user.getSalt());
         userMapper.updatePassword(user.getId(), newpasswd);
         return map;
+    }
+
+    public LoginTicket findLoginTicket(String ticket) {
+        return loginTicketMapper.selectByTicket(ticket);
+    }
+
+    public int updateHeaderUrl(int userId, String headerUrl) {
+        return userMapper.updateHeader(userId, headerUrl);
     }
 }
