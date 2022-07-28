@@ -30,7 +30,8 @@ public class LoginTicketInterceptor implements HandlerInterceptor {
     private HostHolder hostHolder;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
+                             Object handler) throws Exception {
         // 从cookies中获取凭证
         String ticket = CookiesUtil.getValue(request, "ticket");
 //        System.out.println(ticket);
@@ -51,7 +52,8 @@ public class LoginTicketInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+    public void postHandle(HttpServletRequest request, HttpServletResponse response,
+                           Object handler, ModelAndView modelAndView) throws Exception {
         User user = hostHolder.getUser();
         if(user != null && modelAndView != null) {
             // 对所有请求做处理，将loginUser放入模板解析器里，再对前端代码进行特判，如果没有这个信息，就不显示

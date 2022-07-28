@@ -1,5 +1,6 @@
 package com.bantanger.controller;
 
+import com.bantanger.annotation.LoginRequired;
 import com.bantanger.entity.User;
 import com.bantanger.service.UserService;
 import com.bantanger.util.CommunityUtil;
@@ -11,11 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sun.security.util.Password;
 
 import javax.jws.WebParam;
 import javax.servlet.ServletOutputStream;
@@ -49,14 +48,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
     public String getSettingPage() {
         return "/site/setting";
     }
 
+    @LoginRequired
     @RequestMapping(path = "/upload", method = RequestMethod.POST)
     public String uploadHeader(MultipartFile headerImage, Model model) {
-        if(headerImage == null) {
+        if (headerImage == null) {
             model.addAttribute("error", "您还没有选择图片");
             return "/site/setting";
         }
@@ -102,7 +103,7 @@ public class UserController {
         ) {
             byte[] buffer = new byte[1024];
             int b = 0;
-            while((b = fis.read(buffer)) != -1) {
+            while ((b = fis.read(buffer)) != -1) {
                 ops.write(buffer, 0, b);
             }
         } catch (IOException e) {
@@ -110,13 +111,44 @@ public class UserController {
         }
     }
 
+    @LoginRequired
+    @RequestMapping(path = "/update", method = RequestMethod.POST)
+    public String updatePassword(String oldPasswd, String newPasswd, String confirmPasswd
+            , Model model, @CookieValue("ticket") String ticket) {
+        if (oldPasswd == null || newPasswd == null || confirmPasswd == null) {
+            model.addAttribute("passwordMsg", "请将字段填写完整");
+            return "/site/setting";
+        }
+        // 从hostHolder拿到当前user用户
+        User user = hostHolder.getUser();
+        if (!user.getPassword().equals(CommunityUtil.md5(oldPasswd + user.getSalt()))) {
+            model.addAttribute("oldPasswordMsg", "原密码错误！");
+            return "/site/setting";
+        }
+        if (user.getPassword().equals(CommunityUtil.md5(newPasswd + user.getSalt()))) {
+            model.addAttribute("newPasswordMsg", "新密码与原密码相同！");
+            return "/site/setting";
+        }
+        if (!newPasswd.equals(confirmPasswd)) {
+            model.addAttribute("confirmPasswordMsg", "两次输入密码不一致！");
+            return "/site/setting";
+        }
+        userService.updatePassword(user.getId(), CommunityUtil.md5(newPasswd + user.getSalt()));
+        // 调用logout退出登陆，再次登陆
+        userService.logout(ticket);
+        return "redirect:/login";
+    }
+
+    @LoginRequired
     @RequestMapping(path = "/letter", method = RequestMethod.GET)
     public String getLetterPage() {
         return "/site/letter";
     }
 
+    @LoginRequired
     @RequestMapping(path = "/profile", method = RequestMethod.GET)
     public String getProfilePage() {
         return "/site/profile";
     }
+
 }
