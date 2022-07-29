@@ -28,7 +28,7 @@ public class CommunityUtil {
     }
 
     /**
-     * @param code 状态
+     * @param code 请求反馈的状态
      * @param msg  提示信息
      * @param map  业务数据
      * @return json数据

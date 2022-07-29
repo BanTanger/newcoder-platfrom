@@ -14,8 +14,15 @@ import java.util.List;
 
 @Mapper
 public interface DiscussPostMapper {
+
     List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
 
-    /*这里使用@Param是因为方法有单个参数并且是拼接SQL，所以必须要用，不然会报错*/
+    /* 这里使用@Param是因为方法有单个参数并且是拼接SQL，所以必须要用，不然会报错 */
     int selectDiscussPostRows(@Param("userId") int userId);
+
+    /* 增加帖子的方法 */
+    int insertDiscussPost(DiscussPost discussPost);
+
+    /* 查询帖子 */
+    DiscussPost selectDiscussPostById(int DiscussPostId);
 }

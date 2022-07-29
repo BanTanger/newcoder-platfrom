@@ -93,7 +93,7 @@
 								   id="old-password" name="oldPasswd" placeholder="请输入原始密码!" required>
 							<div class="invalid-feedback" th:text="${oldPasswordMsg}">
 								密码长度不能小于8位!
-							</div>							
+							</div>
 						</div>
 					</div>
 					<div class="form-group row mt-4">
@@ -103,7 +103,7 @@
 								   id="new-password" name="newPasswd" placeholder="请输入新的密码!" required>
 							<div class="invalid-feedback" th:text="${newPasswordMsg}">
 								密码长度不能小于8位!
-							</div>							
+							</div>
 						</div>
 					</div>
 					<div class="form-group row mt-4">
@@ -113,16 +113,16 @@
 								   id="confirm-password" name="confirmPasswd" placeholder="再次输入新密码!" required>
 							<div class="invalid-feedback" th:text="${confirmPasswordMsg}">
 								两次输入的密码不一致!
-							</div>								
+							</div>
 						</div>
-					</div>				
+					</div>
 					<div class="form-group row mt-4">
 						<div class="col-sm-2"></div>
 						<div class="col-sm-10 text-center">
-							<button type="submit" class="btn btn-info text-white form-control">立即保存</button>
+							<button type="submit" class="btn btn-info text-white form-control" onclick="updatePasswd()">立即保存</button>
 						</div>
 					</div>
-				</form>				
+				</form>
 			</div>
 		</div>
 
@@ -194,6 +194,55 @@
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.js" crossorigin="anonymous"></script>
 	<script th:src="@{/js/global.js}"></script>
+<!--	<script th:src="@{/webjars/jquery/3.3.1/jquery.js}" ></script>-->
+
+<!--	<script type="text/javascript" th:inline="javascript">-->
+<!--		// 要使用thymeleaf行内表达式则上面需要使用：th:inline="javascript" 标识-->
+<!--		$(function () {-->
+<!--			var isCheck = false;-->
+<!--			//原密码失去焦点-->
+<!--			$("#oldPassword").blur(function () {-->
+<!--				var oldPassword = $(this).val().trim();-->
+<!--				if(!oldPassword) {-->
+<!--					$('#pwdText').css('color', 'red');-->
+<!--					isCheck = false;-->
+<!--					return ;-->
+<!--				}-->
+
+
+<!--				//theymeleaf行内表达式-->
+<!--				var url = [[@{/user/update/}]] + oldPassword;-->
+<!--				//异步判断密码是否正确-->
+<!--				$.ajax({-->
+<!--					url: url,-->
+<!--					dataType: 'json',-->
+<!--					method: 'GET',-->
+<!--					success: function (data) {-->
+<!--						isCheck = data;-->
+<!--						data ? $("#pwdText").replaceWith("<span id='pwdText'>*原密码正确</span>")-->
+<!--								: $("#pwdText").replaceWith("<span id='pwdText' style='color: red'>*原密码错误</span>");-->
+<!--					},-->
+<!--					error: function () {-->
+<!--						$('#pwdText').html("校验原密码异常");-->
+<!--						isCheck = false;-->
+<!--					}-->
+<!--				});-->
+<!--			});-->
+
+<!--			$("#save").click(function () {-->
+
+<!--				if(isCheck) {-->
+<!--					if($("#newPassword").val() && $("#reNewPassword").val()-->
+<!--							&& $("#newPassword").val() == $("#reNewPassword").val()) {-->
+<!--						$("#pwdForm").submit();-->
+<!--					}else{-->
+<!--						$("#reNewPwdText").replaceWith("<span id='reNewPwdText' style='color: red'>*保证和新密码一致</span>");-->
+<!--					}-->
+<!--				}-->
+
+<!--			});-->
+<!--		});-->
+<!--	</script>-->
 	<script>
 		$(function(){
 			bsCustomFileInput.init();
