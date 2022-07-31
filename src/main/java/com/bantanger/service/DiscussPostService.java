@@ -1,6 +1,8 @@
 package com.bantanger.service;
 
+import com.bantanger.dao.CommentMapper;
 import com.bantanger.dao.DiscussPostMapper;
+import com.bantanger.entity.Comment;
 import com.bantanger.entity.DiscussPost;
 import com.bantanger.util.SensitiveFilter;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,10 +1,11 @@
 package com.bantanger;
 
+import com.bantanger.dao.CommentMapper;
 import com.bantanger.dao.DiscussPostMapper;
 import com.bantanger.dao.LoginTicketMapper;
 import com.bantanger.dao.UserMapper;
-import com.bantanger.entity.DiscussPost;
-import com.bantanger.entity.LoginTicket;
+import com.bantanger.entity.*;
+import com.bantanger.service.DiscussPostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,9 @@ public class MapperTest {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
 
     @Test
     public void UserMapperTest() {
@@ -54,5 +58,29 @@ public class MapperTest {
         loginTicket.setStatus(0);
         loginTicket.setExpired(new Date(System.currentTimeMillis() + 1000 * 60 * 10));
         loginTicketMapper.insertLoginTicket(loginTicket);
+    }
+
+    @Test
+    public void selectCommentTest() {
+        // 帖子
+        DiscussPost post = discussPostMapper.selectDiscussPostById(275);
+        // 作者
+        User user = userMapper.selectById(post.getUserId());
+
+        // 评论分页信息
+        Page page = new Page();
+        page.setLimit(5);
+        page.setPath("/discuss/detail/" + 1);
+        page.setRows(post.getCommentCount());
+
+        // 评论：给帖子的评论
+        // 回复：给评论的评论
+        // 评论列表
+        List<Comment> commentList = commentMapper.selectCommentsByEntity(
+                1, post.getId(), page.getOffset(), page.getLimit());
+
+        for (Comment comment : commentList) {
+            System.out.println(comment);
+        }
     }
 }

@@ -11,9 +11,6 @@
         id, username, password, salt, email, type, status, activation_code, header_url, create_time
     </sql>
 
-    <sql id="insertValueFields">
-    </sql>
-
     <select id="selectById" resultType="User">
         select <include refid="selectFields"></include>
         from user where id = #{id}
