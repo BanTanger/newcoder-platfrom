@@ -1,4 +1,4 @@
-package com.bantanger.interceptor;
+package com.bantanger.controller.interceptor;
 
 import com.bantanger.annotation.LoginRequired;
 import com.bantanger.util.HostHolder;

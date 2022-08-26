@@ -1,16 +1,11 @@
 package com.bantanger;
 
-import com.bantanger.dao.CommentMapper;
-import com.bantanger.dao.DiscussPostMapper;
-import com.bantanger.dao.LoginTicketMapper;
-import com.bantanger.dao.UserMapper;
+import com.bantanger.dao.*;
 import com.bantanger.entity.*;
-import com.bantanger.service.DiscussPostService;
-import org.junit.jupiter.api.Test;
+import com.bantanger.service.CommentService;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Date;
 import java.util.List;
@@ -53,7 +48,7 @@ public class MapperTest {
     @Test
     public void insertTest() {
         LoginTicket loginTicket = new LoginTicket();
-         loginTicket.setUserId(1);
+        loginTicket.setUserId(1);
         loginTicket.setTicket("abc");
         loginTicket.setStatus(0);
         loginTicket.setExpired(new Date(System.currentTimeMillis() + 1000 * 60 * 10));
@@ -82,5 +77,53 @@ public class MapperTest {
         for (Comment comment : commentList) {
             System.out.println(comment);
         }
+
+
+    }
+
+    @Autowired
+    private CommentService commentService;
+
+    @Test
+    public void test() {
+//        Comment comment = new Comment();
+//        String s = new String();
+//        System.out.println(s.equals(null));
+//        System.out.println(comment == null);
+        commentService.addComment(null);
+    }
+
+
+    @Autowired
+    private MessageMapper messageMapper;
+
+    @Test
+    public void selectConversationsTest() {
+        List<Message> messages = messageMapper.selectConversations(111, 0, 5);
+        messages.forEach(System.out::println);
+    }
+
+    @Test
+    public void selectConversationCountTest() {
+        int i = messageMapper.selectConversationCount(111);
+        System.out.println(i);
+    }
+
+    @Test
+    public void selectLettersTest() {
+        List<Message> messages = messageMapper.selectLetters("111_112", 0, 5);
+        messages.forEach(System.out::println);
+    }
+
+    @Test
+    public void selectLetterCountTest() {
+        int i = messageMapper.selectLetterCount("111_112");
+        System.out.println(i);
+    }
+
+    @Test
+    public void selectLetterUnreadCountTest() {
+        int i = messageMapper.selectLetterUnreadCount(131, "111_131");
+        System.out.println(i);
     }
 }

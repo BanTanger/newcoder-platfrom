@@ -1,4 +1,4 @@
-package com.bantanger.interceptor;
+package com.bantanger.controller.interceptor;
 
 import com.bantanger.entity.LoginTicket;
 import com.bantanger.entity.User;
