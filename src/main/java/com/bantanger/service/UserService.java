@@ -1,21 +1,20 @@
 package com.bantanger.service;
 
-import com.bantanger.dao.LoginTicketMapper;
 import com.bantanger.dao.UserMapper;
 import com.bantanger.entity.LoginTicket;
 import com.bantanger.entity.User;
-import com.bantanger.util.CommunityUtil;
 import com.bantanger.util.CommunityConstant;
+import com.bantanger.util.CommunityUtil;
 import com.bantanger.util.MailClient;
 import com.bantanger.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import sun.security.krb5.internal.Ticket;
 
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
@@ -146,7 +145,7 @@ public class UserService implements CommunityConstant {
      * @param expiredSeconds 超时时间（24小时）
      * @return 成败信息
      */
-    public Map<String, Object> login(String username, String password, int expiredSeconds) {
+    public Map<String, Object> login(String username, String password, long expiredSeconds) {
         Map<String, Object> map = new HashMap<>(); // 返回到消息信息
         // 空值特判
         if (StringUtils.isBlank(username)) {
@@ -348,5 +347,29 @@ public class UserService implements CommunityConstant {
     public void clearCache(int userId) {
         String redisKey = RedisKeyUtil.getUserKey(userId);
         redisTemplate.delete(redisKey);
+    }
+
+    /**
+     * 获得用户权限
+     * @param userId
+     * @return
+     */
+    public Collection<? extends GrantedAuthority> getAuthorities(int userId) {
+        User user = findUserById(userId);
+        List<GrantedAuthority> list = new ArrayList<>();
+        list.add(new GrantedAuthority() {
+            @Override
+            public String getAuthority() {
+                switch (user.getType()) {
+                    case 1:
+                        return AUTHORITY_ADMIN;
+                    case 2:
+                        return AUTHORITY_MODERATOR;
+                    default:
+                        return AUTHORITY_USER;
+                }
+            }
+        });
+        return list;
     }
 }

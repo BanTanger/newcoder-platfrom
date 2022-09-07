@@ -1,5 +1,6 @@
 $(function(){
 	$(".follow-btn").click(follow);
+	$("#sendBtn").click(send_letter);
 });
 
 function follow() {
@@ -35,4 +36,29 @@ function follow() {
 		);
 		//$(btn).text("关注TA").removeClass("btn-secondary").addClass("btn-info");
 	}
+}
+
+function send_letter() {
+	$("#sendModal").modal("hide");
+
+	var toName = $("#recipient-name").val();
+	var content = $("#message-text").val();
+	$.post(
+		CONTEXT_PATH + "/user/send",
+		{"toName":toName,"content":content},
+		function(data) {
+			data = $.parseJSON(data);
+			if(data.code == 0) {
+				$("#hintBody").text("发送成功!");
+			} else {
+				$("#hintBody").text(data.msg);
+			}
+
+			$("#hintModal").modal("show");
+			setTimeout(function(){
+				$("#hintModal").modal("hide");
+				location.reload();
+			}, 2000);
+		}
+	);
 }

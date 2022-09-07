@@ -1,5 +1,6 @@
 package com.bantanger.config;
 
+import com.bantanger.controller.interceptor.DataInterceptor;
 import com.bantanger.controller.interceptor.LoginRequiredInterceptor;
 import com.bantanger.controller.interceptor.LoginTicketInterceptor;
 import com.bantanger.controller.interceptor.MessageInterceptor;
@@ -22,13 +23,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private LoginTicketInterceptor loginTicketInterceptor;
 
     @Autowired
+    @Deprecated // 废弃登陆验证拦截器，采用SpringSecurity方式安全登陆
     private LoginRequiredInterceptor loginRequiredInterceptor;
 
     @Autowired
     private MessageInterceptor messageInterceptor;
 
+    @Autowired
+    private DataInterceptor dataInterceptor;
+
     /**
      * 过滤器：对拦截器拦截的请求进行过滤不拦截，提高效率
+     *
      * @param registry 三个重要方法: addInterceptor 添加需要过滤的拦截器
      *                 excludePathPatterns 添加不需要过滤的一系列资源路径
      *                 addPathPatterns 添加需要过滤的一系列资源路径
@@ -36,13 +42,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginTicketInterceptor)
-                .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
 
-        registry.addInterceptor(loginRequiredInterceptor)
-                .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+//        registry.addInterceptor(loginRequiredInterceptor)
+//                .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
 
         registry.addInterceptor(messageInterceptor)
-                .excludePathPatterns("/**/*.css","/**/*.js","/**/*.png","/**/*.jpg","/**/*.jpeg");
+                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
+
+        registry.addInterceptor(dataInterceptor)
+                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
 
     }
 

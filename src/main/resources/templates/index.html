@@ -65,10 +65,10 @@
                 <!-- 筛选条件 -->
                 <ul class="nav nav-tabs mb-3">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">最新</a>
+                        <a th:class="|nav-link ${orderMode==0?'active':''}|" th:href="@{/index(orderMode=0)}">最新</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">最热</a>
+                        <a th:class="|nav-link ${orderMode==1?'active':''}|" th:href="@{/index(orderMode=1)}">最热</a>
                     </li>
                 </ul>
                 <button type="button" class="btn btn-primary btn-sm position-absolute rt-0"
@@ -129,8 +129,20 @@
                             <span class="badge badge-secondary bg-primary" th:if="${map.post.type==1}">置顶</span>
                             <span class="badge badge-secondary bg-danger" th:if="${map.post.status==1}">精华</span>
                         </h6>
+
+                        <!--<div style="margin-top: -10px;overflow: hidden;text-overflow: ellipsis;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;">
+                            内容:
+                            <a th:href="@{|/discuss/detail/${map.post.id}|}">
+                                <u class="mr-3" th:utext="${map.post.content}">内容</u>
+                            </a>
+                        </div>-->
+
                         <div class="text-muted font-size-12">
-                            <u class="mr-3" th:utext="${map.user?.username}">寒江雪</u> 发布于 <b th:text="${#dates.format(map.post.createTime,'yyyy-MM-dd HH:mm:ss')}">2019-04-15 15:32:18</b>
+                            <a th:href="@{|/user/profile/${map.user.id}|}">
+                                <u class="mr-3" th:utext="${map.user.username}">寒江雪</u>
+                            </a>
+                            发布于
+                            <b th:text="${#dates.format(map.post.createTime,'yyyy-MM-dd HH:mm:ss')}">2019-04-15 15:32:18</b>
                             <ul class="d-inline float-right">
                                 <li class="d-inline ml-2">赞 <span th:text="${map.likeCount}">11</span></li>
                                 <li class="d-inline ml-2">|</li>

@@ -17,10 +17,13 @@ public class RedisKeyUtil {
     private static final String PREFIX_KAPTCHA = "kaptcha";
     private static final String PREFIX_TICKET = "ticket";
     private static final String PREFIX_USER = "user";
+    private static final String PREFIX_UV = "uv";
+    private static final String PREFIX_DAU = "dau";
+    private static final String PREFIX_POST = "post";
 
     /**
      * 某一个实体的赞
-     *
+     * <p>
      * 定义赞的 key值 名称
      * 数据库名称格式如下：
      * like:entity:entityType:entityId -> set(userId)
@@ -36,6 +39,7 @@ public class RedisKeyUtil {
 
     /**
      * 某个用户的赞
+     *
      * @param userId 用户id
      * @return 指定用户获得的所有赞的 key 值名称
      */
@@ -47,7 +51,8 @@ public class RedisKeyUtil {
      * 某个用户关注的对象实体
      * 格式：followee:userId:entityType -> zset(entityId, now)
      * now为添加时间(作为排序依据，最新关注放在最上面)
-     * @param userId 用户id
+     *
+     * @param userId     用户id
      * @param entityType 实体类型
      * @return 用户关注列表 key值名称
      */
@@ -59,7 +64,8 @@ public class RedisKeyUtil {
      * 某个实体拥有的粉丝
      * 格式：follower:entityType:entityId -> zset(userId, now)
      * now为添加时间(作为排序依据，最新关注放在最上面)
-     * @param entityId 实体id
+     *
+     * @param entityId   实体id
      * @param entityType 实体类型
      * @return 实体类拥有的粉丝 key值名称
      */
@@ -72,6 +78,7 @@ public class RedisKeyUtil {
      * 但当前用户并没有登陆，没法通过userId对没有用户设置Key值
      * 我们先传输一个随机字符绑定每一个用户(通过cookies)，
      * 等生成验证码之后再重做Key
+     *
      * @param owner 随机字符串
      * @return
      */
@@ -82,6 +89,7 @@ public class RedisKeyUtil {
     /**
      * 登陆凭证
      * 代替LoginTicket表来存储数据。
+     *
      * @param ticket
      * @return
      */
@@ -91,10 +99,61 @@ public class RedisKeyUtil {
 
     /**
      * 用户缓存
+     *
      * @param userId
      * @return
      */
     public static String getUserKey(int userId) {
         return PREFIX_USER + SPLIT + userId;
     }
+
+    /**
+     * 单日UV
+     *
+     * @param date
+     * @return
+     */
+    public static String getUVKey(String date) {
+        return PREFIX_UV + SPLIT + date;
+    }
+
+    /**
+     * 区间范围UV
+     *
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static String getUVKey(String startDate, String endDate) {
+        return PREFIX_UV + SPLIT + startDate + SPLIT + endDate;
+    }
+
+    /**
+     * 单日DAU
+     * @param date
+     * @return
+     */
+    public static String getDAUKey(String date) {
+        return PREFIX_DAU + SPLIT + date;
+    }
+
+    /**
+     * 区间范围DAU
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static String getDAUKey(String startDate, String endDate) {
+        return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
+    }
+
+    /**
+     * 为帖子计算分数
+     * 执行逻辑是，当帖子被点赞，评论时使用redis存值
+     * @return
+     */
+    public static String getPostScoreKey() {
+        return PREFIX_POST + SPLIT + "score";
+    }
+
 }

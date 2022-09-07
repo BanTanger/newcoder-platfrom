@@ -19,11 +19,11 @@
         <include refid="selectFields"></include>
         from message
         where id in ( /* 作为子查询 */
-        select max(id) from message
-        where status != 2 and from_id != 1
-        /*userId 有可能是来源也可能是接收 */
-        and (from_id = #{userId} or to_id = #{userId})
-        group by conversation_id
+            select max(id) from message
+            where status != 2 and from_id != 1
+            /*userId 有可能是来源也可能是接收 */
+            and (from_id = #{userId} or to_id = #{userId})
+            group by conversation_id
         )
         order by id desc
         limit #{offset}, #{limit};

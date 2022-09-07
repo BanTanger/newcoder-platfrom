@@ -1,9 +1,11 @@
 package com.bantanger.controller;
 
 import com.bantanger.annotation.LoginRequired;
+import com.bantanger.entity.Message;
 import com.bantanger.entity.User;
 import com.bantanger.service.FollowService;
 import com.bantanger.service.LikeService;
+import com.bantanger.service.MessageService;
 import com.bantanger.service.UserService;
 import com.bantanger.util.CommunityConstant;
 import com.bantanger.util.CommunityUtil;
@@ -17,12 +19,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sun.security.util.Password;
 
-import javax.jws.WebParam;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Date;
 
 /**
  * @author bantanger 半糖
@@ -56,6 +59,9 @@ public class UserController implements CommunityConstant {
 
     @Autowired
     private FollowService followService;
+
+    @Autowired
+    private MessageService messageService;
 
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
@@ -177,4 +183,26 @@ public class UserController implements CommunityConstant {
         return "/site/profile";
     }
 
+    @PostMapping(path = "/send")
+    @ResponseBody /* 异步请求需要 ResponseBody */
+    public String sendLetter(String toName, String content) {
+        User target = userService.findUserByName(toName);
+        if (target == null) {
+            return CommunityUtil.getJSONString(1, "目标用户不存在！");
+        }
+        Message message = new Message();
+        message.setFromId(hostHolder.getUser().getId());
+        message.setToId(target.getId());
+        if (message.getFromId() > message.getToId()) {
+            message.setConversationId(message.getToId() + "_" + message.getFromId());
+        } else {
+            message.setConversationId(message.getFromId() + "_" + message.getToId());
+        }
+        message.setContent(content);
+        message.setCreateTime(new Date());
+        message.setStatus(0);
+        messageService.addMessage(message);
+
+        return CommunityUtil.getJSONString(0, "操作成功！");
+    }
 }

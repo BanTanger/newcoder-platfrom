@@ -1,7 +1,6 @@
 package com.bantanger.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.bantanger.annotation.LoginRequired;
 import com.bantanger.entity.Message;
 import com.bantanger.entity.Page;
 import com.bantanger.entity.User;
@@ -13,7 +12,10 @@ import com.bantanger.util.HostHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.util.HtmlUtils;
 
 import java.util.*;
@@ -101,14 +103,14 @@ public class MessageController implements CommunityConstant {
 
         // 设置已读
         List<Integer> ids = getLetterIds(lettersList);
-        if(!ids.isEmpty()) {
+        if (!ids.isEmpty()) {
             messageService.readMessage(ids);
         }
 
         return "/site/letter-detail";
     }
 
-    private User getLetterTarget(String conversationId) {
+    public User getLetterTarget(String conversationId) {
         String[] s = conversationId.split("_");
         int id0 = Integer.parseInt(s[0]);
         int id1 = Integer.parseInt(s[1]);
@@ -121,6 +123,7 @@ public class MessageController implements CommunityConstant {
 
     /**
      * 获取消息列表其中的id列表
+     *
      * @param letterList
      * @return
      */
@@ -165,8 +168,9 @@ public class MessageController implements CommunityConstant {
         User user = hostHolder.getUser();
         // 查询评论类通知
         Message message = messageService.findLatestNotice(user.getId(), TOPIC_COMMENT);
-        Map<String, Object> messageVO = new HashMap<>();
-        if(message != null) {
+        Map<String, Object> messageVO = null;
+        if (message != null) {
+            messageVO = new HashMap<>();
             messageVO.put("message", message);
 
             // 反转义前端数据保存到后端时的转义字符
@@ -184,13 +188,13 @@ public class MessageController implements CommunityConstant {
             // 查询未读数量
             int unread = messageService.findNoticeUnreadCount(user.getId(), TOPIC_COMMENT);
             messageVO.put("unread", unread);
+            model.addAttribute("commentNotice", messageVO);
         }
-        model.addAttribute("commentNotice", messageVO);
 
         // 查询点赞类通知
         message = messageService.findLatestNotice(user.getId(), TOPIC_LIKE);
-        messageVO = new HashMap<>();
-        if(message != null) {
+        if (message != null) {
+            messageVO = new HashMap<>();
             messageVO.put("message", message);
 
             // 反转义前端数据保存到后端时的转义字符
@@ -208,13 +212,13 @@ public class MessageController implements CommunityConstant {
             // 查询未读数量
             int unread = messageService.findNoticeUnreadCount(user.getId(), TOPIC_LIKE);
             messageVO.put("unread", unread);
+            model.addAttribute("likeNotice", messageVO);
         }
-        model.addAttribute("likeNotice", messageVO);
 
         // 查询关注类通知
         message = messageService.findLatestNotice(user.getId(), TOPIC_FOLLOW);
-        messageVO = new HashMap<>();
-        if(message != null) {
+        if (message != null) {
+            messageVO = new HashMap<>();
             messageVO.put("message", message);
 
             // 反转义前端数据保存到后端时的转义字符
@@ -231,8 +235,8 @@ public class MessageController implements CommunityConstant {
             // 查询未读数量
             int unread = messageService.findNoticeUnreadCount(user.getId(), TOPIC_FOLLOW);
             messageVO.put("unread", unread);
+            model.addAttribute("followNotice", messageVO);
         }
-        model.addAttribute("followNotice", messageVO);
 
         // 查询未读消息数量 --> 私信
         int letterUnreadCount = messageService.findLetterUnreadCount(user.getId(), null);
@@ -260,20 +264,22 @@ public class MessageController implements CommunityConstant {
         List<Map<String, Object>> noticeVoList = new ArrayList<>();
         if (noticeList != null) {
             for (Message notice : noticeList) {
-                Map<String, Object> map = new HashMap<>();
-                // 通知
-                map.put("notice", notice);
-                // 内容 反转义前端的特殊符号
-                String content = HtmlUtils.htmlUnescape(notice.getContent());
-                Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
-                map.put("user", userService.findUserById((Integer) data.get("userId")));
-                map.put("entityType", data.get("entityType"));
-                map.put("entityId", data.get("entityId"));
-                map.put("postId", data.get("postId"));
-                // 通知作者
-                map.put("fromUser", userService.findUserById(notice.getFromId()));
+                if (notice.getFromId() != user.getId()) { // 防止自己通知自己！
+                    Map<String, Object> map = new HashMap<>();
+                    // 通知
+                    map.put("notice", notice);
+                    // 内容 反转义前端的特殊符号
+                    String content = HtmlUtils.htmlUnescape(notice.getContent());
+                    Map<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+                    map.put("user", userService.findUserById((Integer) data.get("userId")));
+                    map.put("entityType", data.get("entityType"));
+                    map.put("entityId", data.get("entityId"));
+                    map.put("postId", data.get("postId"));
+                    // 通知作者
+                    map.put("fromUser", userService.findUserById(notice.getFromId()));
 
-                noticeVoList.add(map);
+                    noticeVoList.add(map);
+                }
             }
         }
         model.addAttribute("notices", noticeVoList);

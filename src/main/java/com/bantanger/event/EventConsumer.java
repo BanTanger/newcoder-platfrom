@@ -9,14 +9,17 @@ import com.bantanger.service.DiscussPostService;
 import com.bantanger.service.ElasticsearchService;
 import com.bantanger.service.MessageService;
 import com.bantanger.util.CommunityConstant;
+import com.bantanger.util.HostHolder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,23 +48,30 @@ public class EventConsumer implements CommunityConstant {
     @Autowired
     private ElasticsearchService elasticsearchService;
 
+    @Value("${wk.image.storage}")
+    private String wkImageStorage;
+
+    @Value("${wk.image.command}")
+    private String wkImageCommand;
+
     /**
      * 消费者通道，订阅三种类型实体：评论，点赞，粉丝
      * 系统调用 MessageService 往订阅通道发送消息
+     *
      * @param record
      */
     @KafkaListener(topics = {TOPIC_COMMENT, TOPIC_LIKE, TOPIC_FOLLOW})
     public void handleCommentMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
             logger.error("消息内容为空！");
-            return ;
+            return;
         }
 
         // 原始数据
         Event event = JSONObject.parseObject(record.value().toString(), Event.class);
         if (event == null) {
             logger.error("消息格式错误！");
-            return ;
+            return;
         }
 
         // 发送站内通知
@@ -77,7 +87,7 @@ public class EventConsumer implements CommunityConstant {
         content.put("entityType", event.getEntityType());
         content.put("entityId", event.getEntityId());
 
-        if(!event.getData().isEmpty()) {
+        if (!event.getData().isEmpty()) {
             for (Map.Entry<String, Object> entry : event.getData().entrySet()) {
                 content.put(entry.getKey(), entry.getValue());
             }
@@ -89,25 +99,77 @@ public class EventConsumer implements CommunityConstant {
 
     /**
      * 消费发帖事件
+     *
      * @param record
      */
     @KafkaListener(topics = {TOPIC_PUBLISH})
     public void handlePublicMessage(ConsumerRecord record) {
         if (record == null || record.value() == null) {
             logger.error("消息内容为空！");
-            return ;
+            return;
         }
 
         // 原始数据
         Event event = JSONObject.parseObject(record.value().toString(), Event.class);
         if (event == null) {
             logger.error("消息格式错误！");
-            return ;
+            return;
         }
 
         // 查询帖子
         DiscussPost discussPost = discussPostService.findDiscussPostById(event.getEntityId());
         // 存储到 es服务器上
         elasticsearchService.saveDiscussPost(discussPost);
+    }
+
+    /**
+     * 消费删帖事件
+     *
+     * @param record
+     */
+    @KafkaListener(topics = {TOPIC_DELETE})
+    public void handleDeleteMessage(ConsumerRecord record) {
+        if (record == null || record.value() == null) {
+            logger.error("消息内容为空！");
+            return;
+        }
+
+        // 原始数据
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            logger.error("消息格式错误！");
+            return;
+        }
+
+        // 存储到 es服务器上
+        elasticsearchService.deleteDiscussPost(event.getEntityId());
+    }
+
+    @KafkaListener(topics = {TOPIC_SHARE})
+    public void handleShareMessage(ConsumerRecord record) {
+        if (record == null || record.value() == null) {
+            logger.error("消息内容为空！");
+            return;
+        }
+        // 原始数据
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            logger.error("消息格式错误！");
+            return;
+        }
+
+        String htmlUrl = (String) event.getData().get("htmlUrl");
+        String fileName = (String) event.getData().get("fileName");
+        String suffix = (String) event.getData().get("suffix");
+
+        String cmd = wkImageCommand + " --quality 75 "
+                + htmlUrl + " " + wkImageStorage + "/" + fileName + suffix;
+
+        try {
+            Runtime.getRuntime().exec(cmd);
+            logger.info("生成长图成功：" + cmd);
+        } catch (IOException e) {
+            logger.error("生成长图失败：" + e.getMessage());
+        }
     }
 }

@@ -1,7 +1,5 @@
 package com.bantanger.controller;
 
-import com.bantanger.dao.DiscussPostMapper;
-import com.bantanger.dao.UserMapper;
 import com.bantanger.entity.DiscussPost;
 import com.bantanger.entity.Page;
 import com.bantanger.entity.User;
@@ -10,7 +8,6 @@ import com.bantanger.service.LikeService;
 import com.bantanger.service.UserService;
 import com.bantanger.util.CommunityConstant;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.web.HateoasPageableHandlerMethodArgumentResolver;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,13 +38,14 @@ public class HomeController implements CommunityConstant {
     private LikeService likeService;
 
     @RequestMapping(value = "/index", method = RequestMethod.GET)
-    public String getIndexPage(Model model, Page page) {
-        // 方法调用前,SpringMVC会自动实例化Model和Page,并将Page注入Model.
+    public String getIndexPage(Model model, Page page,
+               @RequestParam(name = "orderMode", defaultValue = "0") int orderMode) {
+        // 方法调用前, SpringMVC会自动实例化Model和Page,并将Page注入Model.
         // 所以,在thymeleaf中可以直接访问Page对象中的数据.
         page.setRows(discussPostService.findDiscussPostRows(0));
-        page.setPath("/index");
+        page.setPath("/index?orderMode" + orderMode);
 
-        List<DiscussPost> list = discussPostService.findDiscussPost(0, page.getOffset(), page.getLimit());
+        List<DiscussPost> list = discussPostService.findDiscussPost(0, page.getOffset(), page.getLimit(), orderMode);
         List<Map<String, Object>> discussPosts = new ArrayList<>();
         if (list != null) {
             for (DiscussPost post : list) {
@@ -61,12 +59,18 @@ public class HomeController implements CommunityConstant {
             }
         }
         model.addAttribute("discussPosts", discussPosts);
+        model.addAttribute("orderMode", orderMode);
         return "/index";
     }
 
     @GetMapping("/error")
     public String getErrorPage() {
         return "/error/500";
+    }
+
+    @GetMapping("/denied")
+    public String getDeniedPage() {
+        return "error/404";
     }
 
 }
