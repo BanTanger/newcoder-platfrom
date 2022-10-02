@@ -5,7 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import sun.text.normalizer.Trie;
 
 import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
@@ -14,7 +13,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * @author bantanger 半糖
@@ -73,6 +71,7 @@ public class SensitiveFilter {
 
     /**
      * 过滤敏感词
+     *
      * @param text 待过滤的文本
      * @return 过滤后的文本
      */
@@ -96,7 +95,7 @@ public class SensitiveFilter {
                 // 如果此时指针 1 位于根节点, 那么将此符号记录结果，让指针 2 往下走一步
                 if (tempNode == rootNode) {
                     sb.append(c);
-                    begin ++;
+                    begin++;
                 }
                 position++; // 指针 3 无论如何都会步进，不管符号在开头还是结尾
                 continue; // 判断下一个是否为特殊符号，不处理下面的情况
@@ -107,19 +106,19 @@ public class SensitiveFilter {
                 // 以 begin 开头的字符串不是敏感词
                 sb.append(text.charAt(begin)); // 记录
                 // 进入下一个位置
-                position = ++ begin; // 指针 2 和 指针 3 同时步进，并且指针 3 比 指针 2 多移动一位
+                position = ++begin; // 指针 2 和 指针 3 同时步进，并且指针 3 比 指针 2 多移动一位
                 // 不是敏感词，所以指针 1 重新指向根节点
                 tempNode = rootNode;
-            } else if(tempNode.isKeywordEnd()) { // 指针走到末尾
+            } else if (tempNode.isKeywordEnd()) { // 指针走到末尾
                 // 发现敏感词，将 begin - position 范围进行替换
                 sb.append(REPLACEMENT);
                 // 双指针往后移动
-                begin = ++ position;
+                begin = ++position;
                 // 指针 1 重新指向根节点
                 tempNode = rootNode;
             } else {
                 // 移动过程, 检查下一个字符
-                position ++;
+                position++;
             }
         }
         sb.append(text.substring(begin));

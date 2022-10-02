@@ -120,8 +120,8 @@
             <!-- 帖子列表 -->
             <ul class="list-unstyled">
                 <li class="media pb-3 pt-3 mb-3 border-bottom" th:each="map:${discussPosts}">
-                    <a th:href="@{|/user/profile/${map.user.id}|}">
-                        <img th:src="${map.user.headerUrl}" class="mr-4 rounded-circle" alt="用户头像" style="width:50px;height:50px;">
+                    <a th:href="@{|/user/profile/${map.user?.id}|}">
+                        <img th:src="${map.user?.headerUrl}" class="mr-4 rounded-circle" alt="用户头像" style="width:50px;height:50px;">
                     </a>
                     <div class="media-body">
                         <h6 class="mt-0 mb-3">
@@ -138,8 +138,8 @@
                         </div>-->
 
                         <div class="text-muted font-size-12">
-                            <a th:href="@{|/user/profile/${map.user.id}|}">
-                                <u class="mr-3" th:utext="${map.user.username}">寒江雪</u>
+                            <a th:href="@{|/user/profile/${map.user?.id}|}">
+                                <u class="mr-3" th:utext="${map.user?.username}">寒江雪</u>
                             </a>
                             发布于
                             <b th:text="${#dates.format(map.post.createTime,'yyyy-MM-dd HH:mm:ss')}">2019-04-15 15:32:18</b>

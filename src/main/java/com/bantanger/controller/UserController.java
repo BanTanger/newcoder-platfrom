@@ -1,15 +1,13 @@
 package com.bantanger.controller;
 
 import com.bantanger.annotation.LoginRequired;
-import com.bantanger.entity.Message;
-import com.bantanger.entity.User;
-import com.bantanger.service.FollowService;
-import com.bantanger.service.LikeService;
-import com.bantanger.service.MessageService;
-import com.bantanger.service.UserService;
+import com.bantanger.entity.*;
+import com.bantanger.service.*;
 import com.bantanger.util.CommunityConstant;
 import com.bantanger.util.CommunityUtil;
 import com.bantanger.util.HostHolder;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Date;
+import java.util.*;
 
 /**
  * @author bantanger 半糖
@@ -48,6 +46,24 @@ public class UserController implements CommunityConstant {
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    @Value("${qiniu.bucket.header.name}")
+    private String headerBucketName;
+
+    @Value("${qiniu.bucket.share.name}")
+    private String shareBucketName;
+
+    @Value("${qiniu.bucket.header.url}")
+    private String headerBucketUrl;
+
+    @Value("${qiniu.bucket.share.url}")
+    private String shareBucketUrl;
+
+    @Value("${qiniu.key.access}")
+    private String accessKey;
+
+    @Value("${qiniu.key.secret}")
+    private String secretKey;
+
     @Autowired
     private HostHolder hostHolder;
 
@@ -63,12 +79,49 @@ public class UserController implements CommunityConstant {
     @Autowired
     private MessageService messageService;
 
+    @Autowired
+    private DiscussPostService discussPostService;
+
+    @Autowired
+    private CommentService commentService;
+
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
-    public String getSettingPage() {
+    public String getSettingPage(Model model) {
+        // 打开设置菜单的时候，就要通过模板将七牛云的凭证传入
+        // 上传文件名称
+        String fileName = CommunityUtil.generateUUID();
+        // 设置响应信息
+        StringMap policy = new StringMap();
+        policy.put("returnBody", CommunityUtil
+                .getJSONString(0)); // 异步，返回JSON数据
+        // 生成上传凭证
+        Auth auth = Auth.create(accessKey, secretKey);
+        String uploadToken = auth.uploadToken(headerBucketName,
+                fileName, 3600, policy);
+
+        model.addAttribute("uploadToken", uploadToken);
+        model.addAttribute("fileName", fileName);
+
         return "/site/setting";
     }
 
+    // 更新头像路径
+    @PostMapping("/header/url")
+    @ResponseBody
+    public String updateHeaderUrl(String fileName){
+        if (StringUtils.isBlank(fileName)) {
+            return CommunityUtil.getJSONString(1, "文件名不能为空！");
+        }
+
+        String url = headerBucketUrl + "/" + fileName;
+        userService.updateHeaderUrl(hostHolder.getUser().getId(), url);
+
+        return CommunityUtil.getJSONString(0);
+    }
+
+    // 启用
+//    @Deprecated
     @LoginRequired
     @RequestMapping(path = "/upload", method = RequestMethod.POST)
     public String uploadHeader(MultipartFile headerImage, Model model) {
@@ -87,6 +140,10 @@ public class UserController implements CommunityConstant {
         fileName = CommunityUtil.generateUUID() + suffix;
         // 确定文件存放的路径名
         File dest = new File(uploadPath + "/" + fileName);
+        if (!dest.getParentFile().exists()) {
+            dest.getParentFile().mkdirs();
+        }
+
         try {
             headerImage.transferTo(dest);
         } catch (IOException e) {
@@ -102,6 +159,8 @@ public class UserController implements CommunityConstant {
         return "redirect:/index";
     }
 
+    // 启用
+//    @Deprecated
     @GetMapping(path = "/header/{fileName}")
     public void getHeader(@PathVariable("fileName") String fileName,
                           HttpServletResponse response) {
@@ -205,4 +264,65 @@ public class UserController implements CommunityConstant {
 
         return CommunityUtil.getJSONString(0, "操作成功！");
     }
+
+    // 我的帖子
+    @RequestMapping(path = "/mypost/{userId}", method = RequestMethod.GET)
+    public String getMyPost(@PathVariable("userId") int userId, Page page, Model model) {
+        User user = userService.findUserById(userId);
+        if (user == null) {
+            throw new RuntimeException("该用户不存在！");
+        }
+        model.addAttribute("user", user);
+
+        // 分页信息
+        page.setPath("/user/mypost/" + userId);
+        page.setRows(discussPostService.findDiscussPostRows(userId));
+
+        // 帖子列表
+        List<DiscussPost> discussList = discussPostService
+                .findDiscussPost(userId, page.getOffset(), page.getLimit(),0);//按最新来排序帖子。
+        List<Map<String, Object>> discussVOList = new ArrayList<>();
+        if (discussList != null) {
+            for (DiscussPost post : discussList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("discussPost", post);
+                map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
+                discussVOList.add(map);
+            }
+        }
+        model.addAttribute("discussPosts", discussVOList);
+
+        return "/site/my-post";
+    }
+
+    // 我的回复
+    @RequestMapping(path = "/myreply/{userId}", method = RequestMethod.GET)
+    public String getMyReply(@PathVariable("userId") int userId, Page page, Model model) {
+        User user = userService.findUserById(userId);
+        if (user == null) {
+            throw new RuntimeException("该用户不存在！");
+        }
+        model.addAttribute("user", user);
+
+        // 分页信息
+        page.setPath("/user/myreply/" + userId);
+        page.setRows(commentService.findUserCount(userId));
+
+        // 回复列表
+        List<Comment> commentList = commentService.findUserComments(userId, page.getOffset(), page.getLimit());
+        List<Map<String, Object>> commentVOList = new ArrayList<>();
+        if (commentList != null) {
+            for (Comment comment : commentList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("comment", comment);
+                DiscussPost post = discussPostService.findDiscussPostById(comment.getEntityId());
+                map.put("discussPost", post);
+                commentVOList.add(map);
+            }
+        }
+        model.addAttribute("comments", commentVOList);
+
+        return "/site/my-reply";
+    }
+
 }

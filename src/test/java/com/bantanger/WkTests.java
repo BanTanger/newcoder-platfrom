@@ -24,4 +24,19 @@ public class WkTests {
             file.mkdir();
         }
     }
+
+    @Test
+    public void test1() {
+        double a, b, c;
+        a = 0.05; b = 0.5; c = 0.0025;
+        double res = (a * b) / (a * b + a * c);
+        System.out.println(res);
+    }
+
+    @Test
+    public void test2() {
+        String a = "123";
+        String b = new String("123");
+        System.out.println(b.intern() == a);
+    }
 }

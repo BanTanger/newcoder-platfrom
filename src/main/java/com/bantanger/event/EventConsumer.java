@@ -40,6 +40,9 @@ public class EventConsumer implements CommunityConstant {
     private KafkaTemplate kafkaTemplate;
 
     @Autowired
+    private HostHolder hostHolder;
+
+    @Autowired
     private MessageService messageService;
 
     @Autowired
@@ -72,6 +75,10 @@ public class EventConsumer implements CommunityConstant {
         if (event == null) {
             logger.error("消息格式错误！");
             return;
+        }
+
+        if (hostHolder.getUser().getId() == event.getEntityUserId()) {
+            return ; // 防止自己给自己发通知
         }
 
         // 发送站内通知

@@ -69,7 +69,7 @@
                 <img src="http://static.nowcoder.com/images/img/icons/ico-discuss.png"/>
                 <span th:utext="${post.title}">备战春招，面试刷题跟他复习，一个月全搞定！</span>
                 <div class="float-right">
-                    <input type="hidden" id="postId" th:value="${post.id}">
+                    <input type="hidden" id="postId" th:value="${post?.id}">
                     <button type="button" class="btn btn-danger btn-sm" id="topBtn"
                             th:text="${post.type==1?'取消置顶':'置顶'}" sec:authorize="hasAnyAuthority('moderator')">置顶</button>
                     <button type="button" class="btn btn-danger btn-sm" id="wonderfulBtn"
@@ -80,16 +80,16 @@
             </h6>
             <!-- 作者 -->
             <div class="media pb-3 border-bottom">
-                <a th:href="@{|/user/profile/${user.id}|}">
+                <a th:href="@{|/user/profile/${user?.id}|}">
                     <img th:src="${user.headerUrl}" class="align-self-start mr-4 rounded-circle user-header" alt="用户头像" >
                 </a>
                 <div class="media-body">
-                    <div class="mt-0 text-warning" th:utext="${user.username}">寒江雪</div>
+                    <div class="mt-0 text-warning" th:utext="${user?.username}">寒江雪</div>
                     <div class="text-muted mt-3">
                         发布于 <b th:text="${#dates.format(post.createTime,'yyyy-MM-dd HH:mm:ss')}">2019-04-15 15:32:18</b>
                         <ul class="d-inline float-right">
                             <li class="d-inline ml-2">
-                                <a href="javascript:;" th:onclick="|like(this,1,${post.id},${post.userId},${post.id});|" class="text-primary">
+                                <a href="javascript:;" th:onclick="|like(this,1,${post?.id},${post?.userId},${post?.id});|" class="text-primary">
                                     <b th:text="${likeStatus==1?'已赞':'赞'}">赞</b> <i th:text="${likeCount}">11</i>
                                 </a>
                             </li>

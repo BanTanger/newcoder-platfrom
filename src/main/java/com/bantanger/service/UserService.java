@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("all")
 @Service
 public class UserService implements CommunityConstant {
+
     @Autowired
     private UserMapper userMapper;
 
